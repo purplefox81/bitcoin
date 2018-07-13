@@ -3851,6 +3851,9 @@ static UniValue bumpfee(const JSONRPCRequest& request)
 
 UniValue generate(const JSONRPCRequest& request)
 {
+    //ycm
+    LogPrintf("=== generate() in rpcwallet.cpp %s","\n");
+
     std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
     CWallet* const pwallet = wallet.get();
 
@@ -3875,7 +3878,12 @@ UniValue generate(const JSONRPCRequest& request)
     }
 
     int num_generate = request.params[0].get_int();
-    uint64_t max_tries = 1000000;
+
+    //ycm
+    //this is max num that a uint64_t can hold, also a sufficently large number to support "toy" mining
+    //uint64_t max_tries = 1000000;
+    uint64_t max_tries = 0xFFFFFFFFFFFFFFFF;
+
     if (!request.params[1].isNull()) {
         max_tries = request.params[1].get_int();
     }

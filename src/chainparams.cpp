@@ -183,6 +183,8 @@ public:
 };
 
 /**
+ * //ycm
+ * //we are configuring 
  * Testnet (v3)
  */
 class CTestNetParams : public CChainParams {
@@ -195,13 +197,54 @@ public:
         consensus.BIP34Hash = uint256S("0x0000000023b3a96d3484e5abb3755c413e7d41500f8e2a5c3f0dd01299cd8ef8");
         consensus.BIP65Height = 581885; // 00000000007f6655f22f98e72ed80d8b06dc761d5da09df0fa1dc4be4f861eb6
         consensus.BIP66Height = 330776; // 000000002104c8c45e99a8853285a3b592602a3ccde2b832481da85e9e4ba182
-        consensus.powLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-        consensus.nPowTargetTimespan = 14 * 24 * 60 * 60; // two weeks
-        consensus.nPowTargetSpacing = 10 * 60;
+
+        //ycm
+        //original value
+        //consensus.powLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+
+        //if we idel for a while, the diff (on testnet) will be reset to 1.0 x this value
+        //change from '00fff...fff' to '000fff.fff', we adjut the target lower, effectively increase the difficulty
+        //use cli's getblockchainheader, we can see the difficulty indeed goes up from 5.9e-08 to 9.5e-07, approximately 16 times
+        //I did two rounds of testing,
+        //first set powLimit as uint256S("00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+        //      make, and start server, use cli to generate 1, use cli to check difficulty, it is 5.9e-08
+        //second set powLimit as uint256S("000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+        //      make, start server, use cli to generate 1, use cli to check difficulty, it is 9.5e-07
+
+        //powLimit is the target limit/ceiling, any pow computation (by cpu/gpu/miner) results lower than this limit is considered to be a valid solution
+        //by having more leaading 0 in powLimit, this value goes down, effectively we bring down the target.
+        //as a result, the difficulty reflected in the header of the mined block in the blockchain goes up.
+
+        //a more theorotical view, let's take (powLimit=000fff and diff 9.5e-07) pair as an example
+        //according to formula:  difficulty = CONSTANT_LARGEST_POSSIBLE_TARGET / current_target = CONSTANT / powLimitVariable
+        //we have: difficulty = 0x00000000FFFF0000000000000000000000000000000000000000000000000000 / 0x000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+        //                    = (5 zero, each 0 in octal format is 4 bytes, i.e. 2^4 = 16 in scale, so 5 zero is (2^4)^5 = 2^20 = 1024*1024)
+        //                    = approximately 1/1024*1024 = approximately 9.5e-07 = approximately the difficulty we got
+        consensus.powLimit =   uint256S("000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");    //seems we need 5-6 extra nonce loops to get the 'solution'
+        
+        //ycm
+        //consensus.nPowTargetTimespan = 14 * 24 * 60 * 60; // two weeks
+        consensus.nPowTargetTimespan = 1 * 1 * 10 * 60; // 10 minutes
+
+        //one special feature of testnet is 
+        //if the time of the last block mined is older than 2 times of nPowTargetSpacing (means nobody on testnet have come up with any new block after 2*nPowTargetSpacing seconds)
+        //testnet will use powLimit (above) to be the temporary target (effectively lower the difficulty to make miner easier to mine the next block)
+        //after this single block, the difficulty revert back to the last block's difficulty
+        //this feature is not applicable to mainnet
+
+        //ycm
+        //consensus.nPowTargetSpacing = 10 * 60;    //10 minutes
+        consensus.nPowTargetSpacing = 0.5 * 60;    //30 seconds
+
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = false;
+
         consensus.nRuleChangeActivationThreshold = 1512; // 75% for testchains
-        consensus.nMinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
+
+        //ycm (every nMinerConfirmationWindow blocks we readjust the difficulty level)
+        //consensus.nMinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
+        consensus.nMinerConfirmationWindow = 20; // nPowTargetTimespan / nPowTargetSpacing
+
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = 1199145601; // January 1, 2008
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = 1230767999; // December 31, 2008
@@ -217,9 +260,16 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 1493596800; // May 1st 2017
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000002830dab7f76dbb7d63");
+        //ycm
+        //i set to 0 according to the online discussion, may not be right
+        //online discussion : it specify the minimum amount of chain work that a client must have before it will consider itself synchronized.
+        //consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000002830dab7f76dbb7d63");
+        consensus.nMinimumChainWork = uint256S("0x00");
 
         // By default assume that the signatures in ancestors of this block are valid.
+        //ycm 
+        //do i need to change this? i guess no, because all blocks are generated by me and are all valid
+        //online discussion : it disables signature checks on blocks that are ancestors of the block specified by that block hash.
         consensus.defaultAssumeValid = uint256S("0x0000000002e9e7b00e1f6dc5123a04aad68dd0f0968d8c7aa45f6640795c37b1"); //1135275
 
         pchMessageStart[0] = 0x0b;

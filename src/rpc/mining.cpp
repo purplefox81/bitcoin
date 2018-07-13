@@ -105,7 +105,17 @@ static UniValue getnetworkhashps(const JSONRPCRequest& request)
 
 UniValue generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGenerate, uint64_t nMaxTries, bool keepScript)
 {
-    static const int nInnerLoopCount = 0x10000;
+    //ycm
+    LogPrintf("generateBlocks() trying to genenerate %d blocks with max # of tries %d %s",nGenerate, nMaxTries, "\n");
+
+    //ycm
+    //nonce is 4bytes (0xFFFFFFFF) but because in this program we assign it to int and int can only hold up to 0x7FFFFFFF
+    //so we use 0x7FFFFFFF for now. with this huge loop count, we only can find a solution by changing the nonce. ExtraNonce is seldomly touched.
+    //to test extraNonce, we can also set this nInnerLoopCount back to a smaller value e.g. 0x10000 (original value) or 0x1000000 
+    
+    //static const int nInnerLoopCount = 0x10000;
+    static const int nInnerLoopCount = 0x1000000; //0x7FFFFFFF; 
+
     int nHeightEnd = 0;
     int nHeight = 0;
 
@@ -114,32 +124,51 @@ UniValue generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGen
         nHeight = chainActive.Height();
         nHeightEnd = nHeight+nGenerate;
     }
+    //ycm
+    LogPrintf("generateBlocks() current heigh %d target height %d \n",nHeight, nHeightEnd);
+
     unsigned int nExtraNonce = 0;
     UniValue blockHashes(UniValue::VARR);
     while (nHeight < nHeightEnd && !ShutdownRequested())
     {
         std::unique_ptr<CBlockTemplate> pblocktemplate(BlockAssembler(Params()).CreateNewBlock(coinbaseScript->reserveScript));
-        if (!pblocktemplate.get())
+        if (!pblocktemplate.get()) {
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Couldn't create new block");
+        }
         CBlock *pblock = &pblocktemplate->block;
         {
             LOCK(cs_main);
+            //ycm
+            //my understanding: here we increase the extra nonce and also sign the coinbase tx (where the extra nonce resides)
             IncrementExtraNonce(pblock, chainActive.Tip(), nExtraNonce);
         }
+        //ycm
+        LogPrintf("generateBlocks() current extra nonce is %i \n",nExtraNonce);
+
+        //ycm
+        //we have the extra nonce fixed, we loop for all possible values of nonces (in total loop for nInnerLoopCount-1 times)
+        //however for nGenerate blocks we want to generate in one go, we will only try nMaxTries times
+        //if the difficulty level is high, it is possible that this generateBlocks() doesnot generate some later blocks
         while (nMaxTries > 0 && pblock->nNonce < nInnerLoopCount && !CheckProofOfWork(pblock->GetHash(), pblock->nBits, Params().GetConsensus())) {
             ++pblock->nNonce;
             --nMaxTries;
         }
         if (nMaxTries == 0) {
+
+            //ycm
+            LogPrintf("generateBlocks() out of all tries %s","\n");
+
             break;
         }
         if (pblock->nNonce == nInnerLoopCount) {
             continue;
         }
         std::shared_ptr<const CBlock> shared_pblock = std::make_shared<const CBlock>(*pblock);
-        if (!ProcessNewBlock(Params(), shared_pblock, true, nullptr))
+        if (!ProcessNewBlock(Params(), shared_pblock, true, nullptr)) {
             throw JSONRPCError(RPC_INTERNAL_ERROR, "ProcessNewBlock, block not accepted");
+        }
         ++nHeight;
+
         blockHashes.push_back(pblock->GetHash().GetHex());
 
         //mark script as important because it was used at least for one coinbase output if the script came from the wallet
@@ -153,6 +182,9 @@ UniValue generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGen
 
 static UniValue generatetoaddress(const JSONRPCRequest& request)
 {
+    //ycm
+    LogPrintf("generatetoaddress() in mining.cpp %s","\n");
+
     if (request.fHelp || request.params.size() < 2 || request.params.size() > 3)
         throw std::runtime_error(
             "generatetoaddress nblocks address (maxtries)\n"
@@ -169,7 +201,13 @@ static UniValue generatetoaddress(const JSONRPCRequest& request)
         );
 
     int nGenerate = request.params[0].get_int();
-    uint64_t nMaxTries = 1000000;
+   
+    //ycm
+    //this is max num that a uint64_t can hold, also a sufficently large number to support "toy" mining
+    //uint64_t nMaxTries = 1000000;
+    uint64_t nMaxTries = 0xFFFFFFFFFFFFFFFF;
+
+
     if (!request.params[2].isNull()) {
         nMaxTries = request.params[2].get_int();
     }
