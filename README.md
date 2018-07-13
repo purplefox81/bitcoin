@@ -1,4 +1,3 @@
-Personal Notes to build a mini BTC for my team
 
 ## What is this
 
@@ -7,6 +6,14 @@ This project is an experiment of creating a 'mini bitcoin' on my own, essentiall
 Bitcoin node can be started in three different modes, mainnet, testnet and regtest. In this codebase, I only touched the testnet portion. Thus the code is only meant to be started in 'testnet' mode. Moreover the bitcoin node will not connect to any existing public nodes. They live in their little world, and keep in sync with each other.
 
 Diffculty level has been set to a very low level. If there are many nodes are consistently mining (in our case using the generate cli command), the difficulty will still be adjusted upwards.
+
+Click on 'commits' to see what changes I made after 13 July. Those files I updated are key files to read if you want to build your own testnet around btc/altcoins.
+
+## Why I build this
+
+I build this to better grasp the concepts of btc, or a broader category cryptocurrencies as a whole.
+
+A 'private' testnet is also useful in internal testing of new functions. Without a proper ASIC miner, a development team often finds it difficult to test certain enhancement on the blockchain or the mining pool. This testnet will make this task easier.
 
 ## How to start testing
 
@@ -28,9 +35,9 @@ To start from an clean empty blockchain
 * in src folder, run `rm -rf 1/testnet3/ 1/blocks/ 2/testnet3/ 2/blocks/`
 * bitcoin-cli's getblockchaininfo will return blocks=0, i.e. no block on the chain
 
-### How to build these from scratch on Mac
+### How to build the code from scratch on Mac
 
-I followed this document https://github.com/bitcoin/bitcoin/blob/master/doc/build-osx.md
+I primarily followed this document https://github.com/bitcoin/bitcoin/blob/master/doc/build-osx.md
 
 First, prepare the environment on Mac
 * xcode-select --install
@@ -46,8 +53,3 @@ Clone and Preconfigure the bitcoin code
 
 Build the code (for every changes we make)
 * on top level (bitcoin directory), run `make`
-
-
-## References
-
-to be added later
