@@ -2,9 +2,9 @@ Personal Notes to build a mini BTC for my team
 
 ## What is this
 
-This project is an experiment of a 'mini bitcoin'. I cloned from the official bitcoin code, adjusted a few parameters, added a few print commands to make the output more verbose.
+This project is an experiment of creating a 'mini bitcoin' on my own, essentially forking btc to a alt-coin. I cloned from the official bitcoin code, adjusted a few parameters, added a few print commands to make the output more verbose.
 
-Note that I only touched the testnet portion. The code is meant to be started in 'testnet' mode. The bitcoin node once will not connect to existing public nodes, they live in their little world, and keep in sync with each other
+Bitcoin node can be started in three different modes, mainnet, testnet and regtest. In this codebase, I only touched the testnet portion. Thus the code is only meant to be started in 'testnet' mode. Moreover the bitcoin node will not connect to any existing public nodes. They live in their little world, and keep in sync with each other.
 
 Diffculty level has been set to a very low level. If there are many nodes are consistently mining (in our case using the generate cli command), the difficulty will still be adjusted upwards.
 
@@ -28,7 +28,7 @@ To start from an clean empty blockchain
 * in src folder, run `rm -rf 1/testnet3/ 1/blocks/ 2/testnet3/ 2/blocks/`
 * bitcoin-cli's getblockchaininfo will return blocks=0, i.e. no block on the chain
 
-### How to build these from sratch on Mac
+### How to build these from scratch on Mac
 
 I followed this document https://github.com/bitcoin/bitcoin/blob/master/doc/build-osx.md
 
